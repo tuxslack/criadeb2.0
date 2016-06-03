@@ -1,0 +1,285 @@
+#!/bin/bash
+
+#Verifica se não é usuário root
+ROT=$(id -u)
+if [ "$ROT" = "0" ];then
+   dialog --msgbox 'O programa não funciona em modo root, por favor entre novamente' 5 70
+   exit
+fi   
+
+dialog --infobox 'Digite o nome do comando que será criado' 5 55
+read pacote
+
+#Criando os diretórios
+mkdir -p $HOME/1
+mkdir $HOME/1/$pacote $HOME/1/$pacote/DEBIAN $HOME/1/$pacote/usr $HOME/1/$pacote/usr/share $HOME/1/$pacote/usr/share/applications 
+mkdir $HOME/1/$pacote/usr/share/icons $HOME/1/$pacote/usr/bin
+chmod 755 -R $HOME/1 # Dando a devida autorização nos diretórios
+
+#Copiando o script para o diretório de geração
+dialog --infobox 'Digite o endereço completo do script' 5 40
+read SCRIPT
+cp $SCRIPT $HOME/1/$pacote/usr/bin
+
+dialog --infobox '
+Seu script terá um atalho no menu? 
+(sem atalho ele rodará só no terminal)
+
+1 - Para sim
+2 - Para não' 15 70
+read prox
+
+#Opção invalida
+if [ "$prox" != "1" -a "$prox" != "2" ];then
+   dialog --msgbox 'Opção invalida' 5 25
+   exit
+fi
+
+# if grande
+if [ "$prox" = "1" ];then
+
+#Copiando o ícone
+dialog --infobox 'Digite o endereço do ícone, ou enter para nenhum (atalho sem figura)' 5 80
+read ICON
+
+if [ "$ICON" != "" ];then
+   cp $ICON $HOME/1/$pacote/usr/share/icons
+   dialog --infobox 'Agora apenas o nome deste ícone.png' 5 45
+   read ICON2
+fi
+############################################################################################# criando o atalho do menu
+echo "[Desktop Entry]" > $HOME/1/$pacote/usr/share/applications/$pacote.desktop
+echo "Name="$pacote >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop
+echo "Name[pt]="$pacote >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop
+echo "Name[pt_BR]="$pacote >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop
+
+dialog --infobox 'Digite um comentário' 5 30
+read coment
+
+if [ "$coment" = "" ];then
+   coment=$"none"
+fi
+
+echo "Comment="$coment >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop
+echo "Comment[pt]="$coment >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop
+echo "Comment[pt_BR]="$coment >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop
+echo "Exec="$pacote %U >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop
+
+# se tiver digitado o nome do ícone então ele grava o endereço do ícone no arquivo.desktop
+if [ "$ICON2" != "" ];then
+   echo "Icon=/usr/share/icons/"$ICON2 >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop
+fi
+
+echo "Terminal=false" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop
+echo "Type=Application" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop
+
+dialog --infobox '               Escolha a categoria do aplicativo
+
+
+1- Acessórios
+2- Desenvolvimento
+3- Educação
+4- Escritório
+5- Gráficos
+6- Internet
+7- Jogos
+8- Multimídia
+9- Outros
+10- Sistema
+11- Preferências' 20 65
+read CATEG
+case $CATEG in
+
+1)
+   CATEG2=$"Utility;"
+   echo "Categories=GTK;GNOME;$CATEG2" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop;;
+2)
+   CATEG2=$"Development;"
+   echo "Categories=GTK;GNOME;$CATEG2" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop;;
+3)
+   CATEG2=$"Education;"
+   echo "Categories=GTK;GNOME;$CATEG2" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop;;
+4)
+   CATEG2=$"Office;"
+   echo "Categories=GTK;GNOME;$CATEG2" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop;;
+5)
+   CATEG2=$"Graphics;"
+   echo "Categories=GTK;GNOME;$CATEG2" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop;;
+6)
+   CATEG2=$"Network;"
+   echo "Categories=GTK;GNOME;$CATEG2" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop;;
+7)
+   CATEG2=$"Game;"
+   echo "Categories=GTK;GNOME;$CATEG2" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop;;
+8)
+   CATEG2=$"AudioVideo;"
+   echo "Categories=GTK;GNOME;$CATEG2" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop;;
+9)
+   CATEG2=$"Other;"
+   echo "Categories=GTK;GNOME;$CATEG2" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop;;
+10)
+   CATEG2=$"System;"
+   echo "Categories=GTK;GNOME;$CATEG2" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop;;
+11)
+   CATEG2=$"Settings;"
+   echo "Categories=GTK;GNOME;$CATEG2" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop;;
+*) 
+   dialog --msgbox 'Opção invalida' 5 25
+   exit;;
+esac
+
+#escrevendo a ultima linha do arquivo
+echo "StartupNotify=true" >> $HOME/1/$pacote/usr/share/applications/$pacote.desktop
+
+#Fechando o if grande
+fi
+
+############################################# Gravando no $pacote/DEBIAN/control ############################################
+echo "Package:"$pacote > $HOME/1/$pacote/DEBIAN/control
+
+dialog --infobox 'Digite a versão do pacote' 5 35
+read versao
+
+if [ "$versao" = "" ];then
+   versao=$"1.0"
+fi
+
+echo "Version:"$versao >> $HOME/1/$pacote/DEBIAN/control
+
+echo "Section: Desktop" >> $HOME/1/$pacote/DEBIAN/control
+echo "Priority: optional" >> $HOME/1/$pacote/DEBIAN/control
+echo "Architecture: all" >> $HOME/1/$pacote/DEBIAN/control
+
+dialog --infobox '
+Digite as dependências do programa separando por vírgula e espaço
+Ou enter para nenhuma' 15 75
+read DEPEN
+
+echo "Depends:"$DEPEN >> $HOME/1/$pacote/DEBIAN/control
+
+dialog --infobox 'Digite o nome de quem o mantém' 5 40
+read mantem
+
+if [ "$mantem" = "" ];then
+   mantem=$"desconhecido, unknown"
+fi
+
+echo "Maintainer:"$mantem >> $HOME/1/$pacote/DEBIAN/control
+echo "Description: Ubuntu and variant system." >> $HOME/1/$pacote/DEBIAN/control
+############################################################################# Diretório Adicional ###################################################################
+#Criando os diretórios
+dialog --infobox '
+)( )( )( )( )( )( )( )( )( )( )( )( )( )(
+Se você precisar que o pacote .deb tenha mais algum arquivo
+Como um áudio do programa, um arquivo texto, etc, então ...
+
+
+Digite "a" para adicionar este item, ou "s" para seguir' 15 80
+read WILE1
+
+if [ "$WILE1" != "a" -a "$WILE1" != "s" ];then
+   dialog --msgbox 'Opção invalida' 5 25
+   exit
+fi
+
+while [ "$WILE1" = "a" ];do
+   dialog --infobox 'Digite o endereço do arquivo' 5 40
+   read ARQ   
+   dialog --infobox 'Agora só o nome do deste arquivo' 5 50
+   read ARQ2
+dialog --infobox '
+Digite o endereço onde o programa acessará o arquivo quando instalado
+Na home não funciona, recomendo o /usr/share ou /etc' 15 75
+   read DEST
+   mkdir -p $HOME/1/$pacote$DEST
+
+dialog --infobox '
+Digite as permissões para este arquivo, exemplo 755 (sem o chmod)
+Ou p para configuração padrão' 10 85
+   read PERMISSAO
+
+   cp $ARQ $HOME/1/$pacote$DEST # copiando o arquivo que deveria copiar antes do dialog, assim não preciso colocar o sleep
+
+# Dando permissão para o arquivo novo
+   if [ "$PERMISSAO" != "p" ];then
+      chmod $PERMISSAO $HOME/1/$pacote$DEST/$ARQ2
+      else
+         chmod 777 $HOME/1/$pacote$DEST/$ARQ2         
+   fi
+
+dialog --infobox '
+Digite "a" para adicionar mais arquivos, ou "s" para seguir' 5 75
+   read WILE1
+
+if [ "$WILE1" != "a" -a "$WILE1" != "s" ];then
+   dialog --msgbox 'Opção invalida' 5 25
+   exit
+fi
+
+done
+
+dialog --infobox '
+Você deseja que o seu programa inicie com o sistema?
+
+1 - Para sim
+2 - Para não' 10 65
+read prox
+
+if [ "$prox" != "1" -a "$prox" != "2" ];then
+   dialog --msgbox 'Opção invalida' 5 25
+   exit
+fi
+
+# Gravando no /etc/xdg/autostart
+if [ "$prox" = "1" ];then
+   mkdir -p $HOME/1/$pacote/etc/xdg/autostart
+   echo "[Desktop Entry]" > $HOME/1/$pacote/etc/xdg/autostart/$pacote.desktop
+   echo "Type=Application" >> $HOME/1/$pacote/etc/xdg/autostart/$pacote.desktop
+   echo "Exec=/usr/bin/$pacote" >> $HOME/1/$pacote/etc/xdg/autostart/$pacote.desktop
+   echo "Hidden=false" >> $HOME/1/$pacote/etc/xdg/autostart/$pacote.desktop
+   echo "X-GNOME-Autostart-enabled=true" >> $HOME/1/$pacote/etc/xdg/autostart/$pacote.desktop
+   echo "Name[pt_BR]=$pacote" >> $HOME/1/$pacote/etc/xdg/autostart/$pacote.desktop
+   echo "Name=$pacote" >> $HOME/1/$pacote/etc/xdg/autostart/$pacote.desktop
+fi
+#####################################################################################################################################################################
+# Criando o pacote .deb
+dpkg-deb -b $HOME/1/$pacote $HOME/$pacote"_"$versao"_".deb 1> /dev/null
+
+dialog --infobox ':) :) :) :) :) :) :) :)
+Pacote criado com sucesso e esta na sua home
+
+Deseja deletar a pasta temporária que fiz na sua home?
+
+1 - Para sim (recomendado)
+2 - Para não' 10 65
+read prox
+
+if [ "$prox" != "1" -a "$prox" != "2" ];then
+   dialog --msgbox 'Opção invalida' 5 25
+   exit
+fi
+
+if [ "$prox" = "1" ];then
+   rm -rf $HOME/1
+fi
+
+dialog --infobox 'Deseja instalar o pacote criado agora?
+
+1 - Para sim
+2 - Para não' 10 55
+read prox
+
+if [ "$prox" != "1" -a "$prox" != "2" ];then
+   dialog --msgbox 'Opção invalida' 5 25
+   exit
+fi
+
+if [ "$prox" = "1" ];then
+   sudo dpkg -i $HOME/$pacote"_"$versao"_".deb
+   else
+      dialog --msgbox '
+Caso deseje instalar mais tarde basta dar o comando:
+
+dpkg -i nome_do_pacote.deb' 10 75      
+fi
+exit
